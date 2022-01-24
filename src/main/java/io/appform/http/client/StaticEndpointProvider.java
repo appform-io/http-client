@@ -26,6 +26,7 @@ public class StaticEndpointProvider implements EndpointProvider {
         return Endpoint.builder()
                 .host(configuration.getHost())
                 .port(configuration.getPort())
+                .secure(configuration.isSecure())
                 .build();
     }
 }

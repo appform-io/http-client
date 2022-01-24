@@ -29,8 +29,10 @@ import javax.validation.constraints.NotEmpty;
 public class HttpConfiguration {
     @NotEmpty
     private String clientName;
+
     @NotEmpty
     private String host;
+
     @Min(0)
     @Max(65_535)
     private int port;

@@ -17,8 +17,28 @@ import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder
 public class Endpoint {
     String host;
     int port;
+    boolean secure;
+
+    @Builder
+    public Endpoint(String host, int port, boolean secure) {
+        this.host = host;
+        this.port = port;
+        this.secure = secure;
+    }
+
+
+    public String uri(final String path) {
+        return String.format("%s://%s:%d%s",
+                             secure
+                             ? "https"
+                             : "http",
+                                 host,
+                                 port,
+                             path.startsWith("/")
+                             ? path
+                             : ("/" + path));
+    }
 }

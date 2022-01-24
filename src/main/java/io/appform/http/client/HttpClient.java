@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import okhttp3.*;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -40,27 +39,27 @@ public class HttpClient {
             final Object payload,
             final Map<String, String> headers) {
         val httpUrl = HttpUrl.get(url);
-        val postBuilder = new Request.Builder();
+        val postBuilder = new Request.Builder()
+                .url(httpUrl);
+
         if (payload instanceof String) {
-            postBuilder
-                    .url(httpUrl)
-                    .post(RequestBody.create((String)payload, APPLICATION_JSON));
+            postBuilder.post(RequestBody.create((String)payload, APPLICATION_JSON));
         }
         else {
-            postBuilder
-                    .url(httpUrl)
-                    .post(RequestBody.create(mapper.writeValueAsBytes(payload), APPLICATION_JSON));
+            postBuilder.post(RequestBody.create(mapper.writeValueAsBytes(payload), APPLICATION_JSON));
         }
         if (headers != null) {
             headers.forEach(postBuilder::addHeader);
         }
         val request = postBuilder.build();
+        log.debug("Calling {} with request: {}", url, request);
         return client.newCall(request).execute();
     }
 
+    @SneakyThrows
     public Response get(
             final String url,
-            final Map<String, String> headers) throws IOException {
+            final Map<String, String> headers) {
         val httpUrl = HttpUrl.get(url);
         val getBuilder = new Request.Builder()
                 .url(httpUrl)
