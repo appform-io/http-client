@@ -2,6 +2,7 @@ package io.appform.http.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.common.Json;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import io.appform.http.client.models.EndpointProviderContext;
@@ -10,6 +11,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 
+import java.net.SocketException;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -37,8 +39,33 @@ class HttpClientTest {
                                                                .configuration(httpConfig)
                                                                .build());
         stubFor(get("/api").willReturn(ok()));
-        val r = httpClient.get(epf.uri("/api"), Map.of());
+        val r = httpClient.get(epf.uri("/api"), null);
         assertTrue(r.isSuccessful());
+    }
+
+    @Test
+    @SneakyThrows
+    void testGetError(final WireMockRuntimeInfo wm) {
+        final var httpConfig = HttpConfiguration.builder()
+                .host("localhost")
+                .port(wm.getHttpPort())
+                .build();
+        val httpClient = new HttpClient(
+                new ObjectMapper(),
+                HttpClientBuilder.builder()
+                        .withConfiguration(httpConfig)
+                        .build());
+        val epf = new StaticEndpointProvider().provide(EndpointProviderContext.builder()
+                                                               .configuration(httpConfig)
+                                                               .build());
+        stubFor(get("/api").willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+        try {
+            httpClient.get(epf.uri("/api"), Map.of());
+            fail();
+        }
+        catch (Exception e) {
+            assertTrue(e instanceof SocketException);
+        }
     }
 
     @Test
@@ -90,6 +117,28 @@ class HttpClientTest {
         assertNotNull(HttpUtils.bodyAsString(r));
     }
 
+
+    @Test
+    @SneakyThrows
+    void testGetWithBodyObject(final WireMockRuntimeInfo wm) {
+        final var httpConfig = HttpConfiguration.builder()
+                .host("localhost")
+                .port(wm.getHttpPort())
+                .build();
+        val httpClient = new HttpClient(
+                new ObjectMapper(),
+                HttpClientBuilder.builder()
+                        .withConfiguration(httpConfig)
+                        .build());
+        val epf = new StaticEndpointProvider().provide(EndpointProviderContext.builder()
+                                                               .configuration(httpConfig)
+                                                               .build());
+        stubFor(get("/api").willReturn(jsonResponse(Map.of("name", "SG"), 200)));
+        val r = httpClient.get(epf.uri("/api"), Map.of());
+        assertTrue(r.isSuccessful());
+        assertNotNull(HttpUtils.bodyAsBytes(r));
+    }
+
     @Test
     @SneakyThrows
     void testGetFail(final WireMockRuntimeInfo wm) {
@@ -131,6 +180,33 @@ class HttpClientTest {
                         .willReturn(ok()));
         val r = httpClient.post(epf.uri("/api"), "{ \"name\" : \"ss\" }", Map.of("TH", "Value"));
         assertTrue(r.isSuccessful());
+    }
+
+
+    @Test
+    @SneakyThrows
+    void testPostFail(final WireMockRuntimeInfo wm) {
+        final var httpConfig = HttpConfiguration.builder()
+                .host("localhost")
+                .port(wm.getHttpPort())
+                .build();
+        val httpClient = new HttpClient(
+                new ObjectMapper(),
+                HttpClientBuilder.builder()
+                        .withConfiguration(httpConfig)
+                        .build());
+        val epf = new StaticEndpointProvider().provide(EndpointProviderContext.builder()
+                                                               .configuration(httpConfig)
+                                                               .build());
+        stubFor(post("/api")
+                        .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+        try {
+            httpClient.post(epf.uri("/api"), "{ \"name\" : \"ss\" }", null);
+            fail();
+        }
+        catch (Exception e) {
+            assertTrue(e instanceof SocketException);
+        }
     }
 
     @Test
