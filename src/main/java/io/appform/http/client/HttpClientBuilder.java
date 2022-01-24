@@ -1,5 +1,5 @@
 /*
- * Copyright 2021. Chandrasekhar Patra
+ * Copyright 2021. Shashank Gautam
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  *  compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,6 @@
  */
 package io.appform.http.client;
 
-import com.codahale.metrics.MetricRegistry;
-import com.raskasa.metrics.okhttp.InstrumentedOkHttpClients;
 import io.appform.http.client.models.HttpConfiguration;
 import lombok.val;
 import okhttp3.ConnectionPool;
@@ -25,17 +23,10 @@ import java.util.concurrent.TimeUnit;
 
 public class HttpClientBuilder {
 
-    private MetricRegistry metricRegistry;
-
     private HttpConfiguration configuration;
 
     public static HttpClientBuilder builder() {
         return new HttpClientBuilder();
-    }
-
-    public HttpClientBuilder withMetricRegistry(MetricRegistry metricRegistry) {
-        this.metricRegistry = metricRegistry;
-        return this;
     }
 
     public HttpClientBuilder withConfiguration(HttpConfiguration configuration) {
@@ -61,17 +52,12 @@ public class HttpClientBuilder {
         dispatcher.setMaxRequests(connections);
         dispatcher.setMaxRequestsPerHost(connections);
 
-        val clientBuilder = new OkHttpClient.Builder()
+        return new OkHttpClient.Builder()
                 .connectionPool(new ConnectionPool(connections, idleTimeOutSeconds, TimeUnit.SECONDS))
                 .connectTimeout(connTimeout, TimeUnit.MILLISECONDS)
                 .readTimeout(opTimeout, TimeUnit.MILLISECONDS)
                 .writeTimeout(opTimeout, TimeUnit.MILLISECONDS)
-                .dispatcher(dispatcher);
-
-        if (metricRegistry == null) {
-            return clientBuilder.build();
-        }
-
-        return InstrumentedOkHttpClients.create(metricRegistry, clientBuilder.build(), configuration.getClientName() + System.currentTimeMillis());
+                .dispatcher(dispatcher)
+                .build();
     }
 }
