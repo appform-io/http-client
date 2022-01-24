@@ -1,8 +1,22 @@
+/*
+ * Copyright 2021. Chandrasekhar Patra
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ *  compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package io.appform.http.client;
 
 import com.codahale.metrics.MetricRegistry;
 import com.raskasa.metrics.okhttp.InstrumentedOkHttpClients;
 import io.appform.http.client.models.HttpConfiguration;
+import lombok.val;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
@@ -35,23 +49,19 @@ public class HttpClientBuilder {
             throw new IllegalArgumentException("httpConfiguration cannot be null");
         }
 
-        int connections = configuration.getConnections();
-        connections = connections == 0 ? 10 : connections;
+        val connections = configuration.getConnections() == 0 ? 10 : configuration.getConnections();
 
-        int idleTimeOutSeconds = configuration.getIdleTimeOutSeconds();
-        idleTimeOutSeconds = idleTimeOutSeconds == 0 ? 30 : idleTimeOutSeconds;
+        val idleTimeOutSeconds = configuration.getIdleTimeOutSeconds() == 0 ? 30 : configuration.getIdleTimeOutSeconds();
 
-        int connTimeout = configuration.getConnectTimeoutMs();
-        connTimeout = connTimeout == 0 ? 10000 : connTimeout;
+        val connTimeout = configuration.getConnectTimeoutMs() == 0 ? 10000 : configuration.getConnectTimeoutMs();
 
-        int opTimeout = configuration.getOpTimeoutMs();
-        opTimeout = opTimeout == 0 ? 10000 : opTimeout;
+        val opTimeout = configuration.getOpTimeoutMs() == 0 ? 10000 : configuration.getOpTimeoutMs();
 
-        final Dispatcher dispatcher = new Dispatcher();
+        val dispatcher = new Dispatcher();
         dispatcher.setMaxRequests(connections);
         dispatcher.setMaxRequestsPerHost(connections);
 
-        final OkHttpClient.Builder clientBuilder = (new OkHttpClient.Builder())
+        val clientBuilder = new OkHttpClient.Builder()
                 .connectionPool(new ConnectionPool(connections, idleTimeOutSeconds, TimeUnit.SECONDS))
                 .connectTimeout(connTimeout, TimeUnit.MILLISECONDS)
                 .readTimeout(opTimeout, TimeUnit.MILLISECONDS)
